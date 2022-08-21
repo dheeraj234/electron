@@ -1,6 +1,5 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { useNavigate } from "react-router-dom";
-import Display from './Display';
 import './Home.css';
 
 const emailValidator = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -14,217 +13,159 @@ const Home = (props) => {
     email: '',
     password: '',
     confirmpassword:'',
+  });
+
+  const [validation, setValidation] = useState({
     firstNameError:'',
     lastNameError:'',
     emailAddressError: "",
     passwordError: "",
-    passwordConfirmationError: "",
-    formSubmitted:false
+    passwordConfirmationError: ""
   });
  
 
   const navigate = useNavigate();
 
   const signup=(e)=>{
-    localStorage.setItem("formData",JSON.stringify(formDetails));
-    console.log(formDetails);
-    e.preventDefault();
+    localStorage.setItem("formData",JSON.stringify(formDetails));    
     props.setFormDetails(formDetails);
-    let formFields = [
-      "fname",
-      "lname",
-      "email",
-      "password",
-      "Confirmpassword"
-    ];
-    let isValid=true;
-    formFields.forEach(field => {
-      isValid = validateField(field) && isValid;
-    });
-
-    if (isValid) setFormDetails({ formSubmitted: true });
-    else setFormDetails({ formSubmitted: false });
-
-    return formDetails.formSubmitted;
-    
-    // setHello(true);
-
-    // return(
-    //   <Display/>
-    // );
+    navigate("/display");
+    e.preventDefault();
   }
 
   function handleblur(e){
-    const {name}= e.target;
-    validateField(name);
-    return;
+    const {name, value}= e.target;
+    validate(name, value);
   }
 
-  function validateField(name) {
-    let isValid = false;
-
-    if (name === "fname") isValid = validateFirstName();
-    else if (name === "lname") isValid = validateLastName();
-    else if (name === "email") isValid = validateEmailAddress();
-    else if (name === "password") isValid = validatePassword();
-    else if (name === "Confirmpasssword") isValid = validatePasswordConfirmation();
-    return isValid;
-  }
-
-  function validateFirstName() {
-    let firstNameError = "";
-    const value = formDetails.fname;
-    if (value?.trim() === "")  firstNameError = "First Name is required";
-
-    setFormDetails({
-      firstNameError
-    });
-    return firstNameError === "";
-  }
-
-  function validateLastName() {
-    let lastNameError = "";
-    const value = formDetails.lname;
-    if (value?.trim() === "") lastNameError = "Last Name is required";
-
-    setFormDetails({
-      lastNameError
-    });
-    return lastNameError === "";
-  }
-
-  function validateEmailAddress() {
-    let emailAddressError = "";
-    const value = formDetails.email;
-    if (value?.trim() === "") emailAddressError = "Email Address is required";
-    else if (!emailValidator.test(value))
-      emailAddressError = "Email is not valid";
-
-    setFormDetails({
-      emailAddressError
-    });
-    return emailAddressError === "";
-  }
-
-  function validatePassword() {
-    let passwordError = "";
-    const value = formDetails.password;
-    if (value?.trim() === "") passwordError = "Password is required";
-    else if (!passwordValidator.test(value))
-      passwordError =
-        "Password must contain at least 8 characters, 1 number, 1 upper and 1 lowercase!";
-
-    setFormDetails({
-      passwordError
-    });
-    return passwordError === "";
-  }
-
-  function validatePasswordConfirmation() {
-    let passwordConfirmationError = "";
-    if (formDetails.password !== formDetails.confirmpassword)
-      passwordConfirmationError = "Password does not match Confirmation";
-
-    setFormDetails({
-      passwordConfirmationError
-    });
-    return passwordConfirmationError === "";
+  function validate(name,value) {
+    if(name === 'fname' || name === 'lname'){
+      if (value?.trim() === ""){
+        name === 'fname' ?
+         setValidation((prevState) => { return {...prevState, firstNameError: "First Name is required" } }) 
+         : setValidation((prevState) => { return {...prevState, lastNameError: "Last Name is required" } }) ;
+        
+      } 
+    }else if(name === 'email'){
+      let emailAddressError = "";
+      if (value?.trim() === "") emailAddressError = "Email Address is required";
+      else if (!emailValidator.test(value)) emailAddressError = "Email is not valid";
+      setValidation((prevState) => { return {...prevState, emailAddressError } })
+    }else{
+      if(name === 'password'){
+        let passwordError = "";
+        if (value?.trim() === "") passwordError = "Password is required";
+        else if (!passwordValidator.test(value))
+          passwordError =
+            "Password must contain at least 8 characters, 1 number, 1 upper and 1 lowercase!";
+        setValidation((prevState) => { return {...prevState, passwordError } })
+      }else {
+        let passwordConfirmationError = "";
+        if (formDetails.password !== formDetails.confirmpassword)
+          passwordConfirmationError = "Password does not match Confirmation";
+        setValidation((prevState) => { return {...prevState, passwordConfirmationError } });
+      }
+    }
   }
 
   function handleChange(e){
     const {name,value}=e.target;
-    setFormDetails({...formDetails,[name]:value});
-    console.log(name,value);
+    setFormDetails((prevState) => { return {...prevState, [name]:value} });
   }
 
-  // (e) => {setFormDetails((details) => { return  {...details, fname: e.target.value}})}
+  useEffect(() => {
+    const formData = JSON.parse(localStorage.getItem('formData'));
+    if(formData === undefined) navigate('');
+    if(formData && formData.fname !== '') {
+      navigate('/display');
+    }
+  }, []);
 
   return (
     <div className='container'>
       <h1>Register</h1>
-      {formDetails.formSubmitted ? (<Display details={formDetails}/>):(
-        <form action='/Display' onSubmit={signup}>
-            <div class='form-group'>
-              <input 
-                 type='text' 
-                 name='fname'
-                 value={formDetails.fname} 
-                 onBlur={handleblur} 
-                 onChange={handleChange} 
-                 id='fname' 
-                 placeholder='first name' 
-                 required/>
-                 <br />
-                 {formDetails.firstNameError && (
-                 <div className="errorMsg">{formDetails.firstNameError}</div>
-                 )}
-            </div>
-            <div class='form-group'>
-              <input 
-                 type='text' 
-                 name='lname'
-                 value={formDetails.lname}
-                 onBlur={handleblur} 
-                 onChange={handleChange} 
-                 id='lname' 
-                 placeholder='last name' 
-                 required/>
-                 <br />
-                 {formDetails.lastNameError && (
-                 <div className="errorMsg">{formDetails.lastNameError}</div>
-                 )}
-            </div>
-            <div class='form-group'>
-              <input 
-                 type='email' 
-                 name='email'
-                 value={formDetails.email} 
-                 onBlur={handleblur} 
-                 onChange={handleChange}
-                 id='email' 
-                 placeholder='Email Address' 
-                 required/>
-                 <br />
-                 {formDetails.emailAddressError && (
-                 <div className="errorMsg">{formDetails.emailAddressError}</div>
-                 )}
-            </div>
-            <div class='form-group'>
-              <input 
-                type='password' 
-                name='password'
-                value={formDetails.password} 
+      <form onSubmit={signup}>
+          <div className='form-group'>
+            <input 
+                type='text' 
+                name='fname'
+                value={formDetails.fname} 
                 onBlur={handleblur} 
-                onChange={handleChange}
-                id='password' 
-                placeholder='password' 
+                onChange={handleChange} 
+                id='fname' 
+                placeholder='first name' 
                 required/>
                 <br />
-                {formDetails.passwordError && (
-                <div className="errorMsg">{formDetails.passwordError}</div>
+                {validation.firstNameError && (
+                <div className="errorMsg">{validation.firstNameError}</div>
                 )}
-            </div>
-            <div class='form-group'>
-              <input 
-                type='password' 
-                name='confirmpassword'
-                value={formDetails.confirmpassword} 
+          </div>
+          <div className='form-group'>
+            <input 
+                type='text' 
+                name='lname'
+                value={formDetails.lname}
                 onBlur={handleblur} 
-                onChange={handleChange}
-                id='confirmpassword' 
-                placeholder='confirmpassword' 
+                onChange={handleChange} 
+                id='lname' 
+                placeholder='last name' 
                 required/>
                 <br />
-                {formDetails.passwordConfirmationError && (
-                <div className="errorMsg">
-                {formDetails.passwordConfirmationError}
-                </div>
+                {validation.lastNameError && (
+                <div className="errorMsg">{validation.lastNameError}</div>
                 )}
-            </div>
-            <div class='form-group'>
-              <button type='submit'onClick={()=>{navigate("/display")}}>Sign Up</button>
-            </div>
-        </form>)}
+          </div>
+          <div className='form-group'>
+            <input 
+                type='email' 
+                name='email'
+                value={formDetails.email} 
+                onBlur={handleblur} 
+                onChange={handleChange}
+                id='email' 
+                placeholder='Email Address' 
+                required/>
+                <br />
+                {validation.emailAddressError && (
+                <div className="errorMsg">{validation.emailAddressError}</div>
+                )}
+          </div>
+          <div className='form-group'>
+            <input 
+              type='password' 
+              name='password'
+              value={formDetails.password} 
+              onBlur={handleblur} 
+              onChange={handleChange}
+              id='password' 
+              placeholder='password' 
+              required/>
+              <br />
+              {validation.passwordError && (
+              <div className="errorMsg">{validation.passwordError}</div>
+              )}
+          </div>
+          <div className='form-group'>
+            <input 
+              type='password' 
+              name='confirmpassword'
+              value={formDetails.confirmpassword} 
+              onBlur={handleblur} 
+              onChange={handleChange}
+              id='confirmpassword' 
+              placeholder='confirmpassword' 
+              required/>
+              <br />
+              {validation.passwordConfirmationError && (
+              <div className="errorMsg">
+              {validation.passwordConfirmationError}
+              </div>
+              )}
+          </div>
+          <div className='form-group'>
+            <button type='submit'>Sign Up</button>
+          </div>
+      </form>
     </div>
   );
  
