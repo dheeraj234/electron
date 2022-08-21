@@ -5,8 +5,10 @@ import Home from './Home';
 import Display from './Display';
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 
+const formData = JSON.parse(localStorage.getItem('formData'));
+
 function App() {
-  const [details, setDetails] = useState();
+  const [details, setDetails] = useState(formData);
   const setFormDetails = (details) => {
     setDetails(details);
   }
